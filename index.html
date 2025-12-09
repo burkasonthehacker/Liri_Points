@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>נקודות לירי</title>
+<style>
+  body {
+    font-family: "Alef", sans-serif;
+    background: #f7f3ea;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #3a2f2a;
+  }
+
+  h1 {
+    margin-top: 30px;
+    font-size: 2rem;
+    letter-spacing: 1px;
+  }
+
+  #container {
+    margin-top: 20px;
+    width: min(500px, 90%);
+  }
+
+  .friend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fffaf3;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+    transition: transform 0.1s;
+  }
+  .friend:active {
+    transform: scale(0.98);
+  }
+
+  .name {
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .number {
+    font-size: 1.2rem;
+    cursor: pointer;
+    min-width: 40px;
+    text-align: center;
+    padding: 2px 6px;
+    background: #f0e6d8;
+    border-radius: 8px;
+  }
+
+  .arrow {
+    cursor: pointer;
+    font-size: 1.3rem;
+    user-select: none;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .arrow:hover {
+    background: #e8dccb;
+  }
+
+  #addForm {
+    margin-top: 25px;
+    background: #fff7e8;
+    padding: 15px;
+    border-radius: 14px;
+    width: min(400px, 90%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+  }
+
+  input, button {
+    font-family: inherit;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #c7b8a6;
+  }
+
+  button {
+    background: #d9c8b4;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button:hover {
+    background: #cbb9a2;
+  }
+</style>
+</head>
+<body>
+
+<h1>טבלת נקודות</h1>
+<div id="container"></div>
+
+<div id="addForm">
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <input id="newName" type="text" placeholder="שם החבר" />
+    <input id="newPoints" type="number" placeholder="נקודות (ברירת מחדל: 1)" />
+    <button onclick="addFriend()">הוסף חבר</button>
+  </div>
+</div>
+
+<script>
+  let friends = JSON.parse(localStorage.getItem("friendsPoints") || "{}");
+
+  function save() {
+    localStorage.setItem("friendsPoints", JSON.stringify(friends));
+  }
+
+  function render() {
+    const c = document.getElementById("container");
+    c.innerHTML = "";
+
+    Object.entries(friends).forEach(([name, points]) => {
+      const row = document.createElement("div");
+      row.className = "friend";
+
+      const n = document.createElement("div");
+      n.className = "name";
+      n.textContent = name;
+
+      const controls = document.createElement("div");
+      controls.className = "controls";
+
+      const down = document.createElement("div");
+      down.className = "arrow";
+      down.textContent = "▼";
+      down.onclick = () => {
+        friends[name] = friends[name] - 1;
+        save(); render();
+      };
+
+      const num = document.createElement("div");
+      num.className = "number";
+      num.textContent = points;
+      num.onclick = () => {
+        const v = prompt("הכנס מספר חדש:", friends[name]);
+        if (v !== null && v.trim() !== "" && !isNaN(Number(v))) {
+          friends[name] = Number(v);
+          save(); render();
+        }
+      };
+
+      const up = document.createElement("div");
+      up.className = "arrow";
+      up.textContent = "▲";
+      up.onclick = () => {
+        friends[name] = friends[name] + 1;
+        save(); render();
+      };
+
+      controls.appendChild(down);
+      controls.appendChild(num);
+      controls.appendChild(up);
+
+      row.appendChild(n);
+      row.appendChild(controls);
+      c.appendChild(row);
+    });
+  }
+
+  function addFriend() {
+    const name = document.getElementById("newName").value.trim();
+    if (!name) return;
+    let points = Number(document.getElementById("newPoints").value);
+    if (isNaN(points) || document.getElementById("newPoints").value.trim() === "") points = 1;
+
+    friends[name] = points;
+    save();
+    render();
+
+    document.getElementById("newName").value = "";
+    document.getElementById("newPoints").value = "";
+  }
+
+  render();
+</script>
+
+</body>
+</html>
