@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>נקודות לירי</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-color: #050505;       /* שחור עמוק */
+    --card-bg: #1a1a1a;        /* אפור כהה לכרטיסים */
+    --primary: #9d4edd;        /* סגול */
+    --accent: #00ff88;         /* ירוק ניאון */
+    --danger: #ff4d4d;         /* אדום למחיקה */
+    --text-main: #ffffff;
+    --text-muted: #b0b0b0;
+  }
+
+  body {
+    font-family: 'Rubik', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  h1 {
+    margin-top: 40px;
+    font-size: 2.5rem;
+    background: linear-gradient(to right, var(--accent), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+  }
+
+  #container {
+    width: min(500px, 90%);
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  /* עיצוב כרטיס חבר */
+  .friend {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 15px 20px;
+    border-radius: 16px;
+    border: 1px solid #333;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .friend:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+  }
+
+  .name-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+  }
+  
+  .delete-btn:hover {
+    color: var(--danger);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #000;
+    padding: 5px 10px;
+    border-radius: 12px;
+    border: 1px solid #333;
+  }
+
+  .arrow {
+    cursor: pointer;
+    font-size: 1.2rem;
+    user-select: none;
+    color: var(--primary);
+    transition: transform 0.1s, color 0.2s;
+    padding: 0 5px;
+  }
+  
+  .arrow:hover {
+    color: var(--accent);
+    transform: scale(1.2);
+  }
+
+  .arrow:active {
+    transform: scale(0.9);
+  }
+
+  .number {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--accent);
+    min-width: 35px;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  /* טופס הוספה */
+  #addForm {
+    margin-top: 40px;
+    margin-bottom: 40px;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 20px;
+    width: min(400px, 90%);
+    border: 1px solid #333;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  }
+
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  input {
+    background: #000;
+    border: 1px solid #333;
+    padding: 12px;
+    border-radius: 10px;
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 8px rgba(157, 78, 221, 0.2);
+  }
+
+  button.add-btn {
+    background: linear-gradient(135deg, var(--primary), #7b2cbf);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
+  }
+
+  button.add-btn:hover {
+    opacity: 0.9;
+  }
+  
+  button.add-btn:active {
+    transform: scale(0.98);
+  }
+
+</style>
+</head>
+<body>
+
+<h1>נקודות לירי</h1>
+
+<div id="container">
+  </div>
+
+<div id="addForm">
+  <div class="input-group">
+    <input id="newName" type="text" placeholder="שם החבר/ה" autocomplete="off" />
+    <input id="newPoints" type="number" placeholder="ניקוד התחלתי" />
+    <button class="add-btn" onclick="addFriend()">הוסף לרשימה ✨</button>
+  </div>
+</div>
+
+<script>
+  // 1. טעינת נתונים
+  let friends = JSON.parse(localStorage.getItem("friendsPoints") || "{}");
+
+  function save() {
+    localStorage.setItem("friendsPoints", JSON.stringify(friends));
+  }
+
+  // 2. פונקציית הרינדור (כולל מיון)
+  function render() {
+    const container = document.getElementById("container");
+    container.innerHTML = "";
+
+    // המרת האובייקט למערך ומיון (הכי הרבה נקודות למעלה)
+    const sortedFriends = Object.entries(friends).sort((a, b) => b[1] - a[1]);
+
+    sortedFriends.forEach(([name, points]) => {
+      // יצירת שורה ראשית
+      const row = document.createElement("div");
+      row.className = "friend";
+
+      // קבוצת שם + מחיקה
+      const nameGroup = document.createElement("div");
+      nameGroup.className = "name-group";
+
+      const delBtn = document.createElement("button");
+      delBtn.className = "delete-btn";
+      delBtn.innerHTML = "✕"; // סימן איקס
+      delBtn.title = "מחק";
+      delBtn.onclick = (e) => {
+        e.stopPropagation();
+        deleteFriend(name);
+      };
+
+      const n = document.createElement("div");
+      n.className = "name";
+      n.textContent = name;
+
+      nameGroup.appendChild(delBtn);
+      nameGroup.appendChild(n);
+
+      // קבוצת כפתורי שליטה
+      const controls = document.createElement("div");
+      controls.className = "controls";
+
+      const down = document.createElement("div");
+      down.className = "arrow";
+      down.textContent = "▼";
+      down.onclick = () => updatePoints(name, -1);
+
+      const num = document.createElement("div");
+      num.className = "number";
+      num.textContent = points;
+      num.onclick = () => manualEdit(name);
+
+      const up = document.createElement("div");
+      up.className = "arrow";
+      up.textContent = "▲";
+      up.onclick = () => updatePoints(name, 1);
+
+      controls.appendChild(down);
+      controls.appendChild(num);
+      controls.appendChild(up);
+
+      row.appendChild(nameGroup);
+      row.appendChild(controls);
+      container.appendChild(row);
+    });
+  }
+
+  // עזר: עדכון נקודות מהיר
+  function updatePoints(name, delta) {
+    friends[name] += delta;
+    save();
+    render();
+  }
+
+  // עזר: עריכה ידנית בלחיצה על המספר
+  function manualEdit(name) {
+    const val = prompt(`שנה ניקוד עבור ${name}:`, friends[name]);
+    if (val !== null && val.trim() !== "" && !isNaN(Number(val))) {
+      friends[name] = Number(val);
+      save();
+      render();
+    }
+  }
+
+  // 3. הוספת חבר חדש
+  function addFriend() {
+    const nameInput = document.getElementById("newName");
+    const pointsInput = document.getElementById("newPoints");
+    
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    if (friends.hasOwnProperty(name)) {
+      alert("השם הזה כבר קיים ברשימה!");
+      return;
+    }
+
+    let points = Number(pointsInput.value);
+    if (pointsInput.value.trim() === "" || isNaN(points)) {
+      points = 0; // ברירת מחדל אם לא הוכנס מספר
+    }
+
+    friends[name] = points;
+    save();
+    render();
+
+    nameInput.value = "";
+    pointsInput.value = "";
+  }
+
+  // 4. מחיקת חבר
+  function deleteFriend(name) {
+    if (confirm(`למחוק את ${name} מהרשימה?`)) {
+      delete friends[name];
+      save();
+      render();
+    }
+  }
+
+  // הפעלה ראשונית
+  render();
+</script>
+
+</body>
+</html>
