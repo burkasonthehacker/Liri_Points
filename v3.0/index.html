@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>נקודות לירי v3.0</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --card-bg: #1a1a1a;
+            --primary: #9d4edd;
+            --accent: #00ff88;
+            --gold: #ffd700;     /* צבע למקום ראשון */
+            --silver: #c0c0c0;   /* צבע למקום שני */
+            --danger: #ff4d4d;
+            --text-main: #ffffff;
+            --text-muted: #b0b0b0;
+        }
+
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* כותרות */
+        h1 {
+            margin-top: 40px;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+            margin-bottom: 5px;
+        }
+
+        /* כותרת מצב אדמין */
+        #adminHeader {
+            display: none; /* מוסתר כברירת מחדל */
+            color: var(--primary);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 5px;
+        }
+
+        #container {
+            width: min(500px, 90%);
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 100px;
+        }
+
+        /* כרטיס חבר */
+        .friend {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 16px;
+            border: 1px solid #333;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .friend:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* עיצובים מיוחדים למקומות הראשונים */
+        .friend.gold-border { border-color: var(--gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.1); }
+        .friend.silver-border { border-color: var(--silver); }
+
+        .name-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* תגיות ערך כספי */
+        .value-badge {
+            font-size: 0.8rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-right: 10px;
+            font-weight: bold;
+            color: #000;
+        }
+        .badge-gold { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        .badge-silver { background: var(--silver); box-shadow: 0 0 5px var(--silver); }
+
+        /* אלמנטים שמוצגים רק לאדמין */
+        .admin-controls {
+            display: none; 
+        }
+        
+        /* כשיש למשתמש קלאס is-admin, מציגים את השליטה */
+        body.is-admin .admin-controls {
+            display: flex; 
+        }
+        
+        body.is-admin #adminHeader {
+            display: block;
+        }
+
+        body.is-admin #addForm {
+            display: block;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #555;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            align-items: center;
+            margin-left: 5px;
+        }
+        
+        .delete-btn:hover { color: var(--danger); }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #000;
+            padding: 5px 10px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .arrow {
+            cursor: pointer;
+            font-size: 1.2rem;
+            user-select: none;
+            color: var(--primary);
+            transition: transform 0.1s;
+            padding: 0 5px;
+        }
+        
+        .arrow:hover { transform: scale(1.2); color: var(--accent); }
+        .arrow:active { transform: scale(0.9); }
+
+        .number {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent);
+            min-width: 35px;
+            text-align: center;
+        }
+        
+        /* במצב אדמין המספר לחיץ לעריכה */
+        body.is-admin .number { cursor: pointer; text-decoration: underline dotted #555; }
+
+        /* טופס הוספה - מוסתר לאורחים */
+        #addForm {
+            display: none;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            width: min(400px, 90%);
+            border: 1px solid #333;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 12px; }
+
+        input {
+            background: #000;
+            border: 1px solid #333;
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+
+        button.add-btn {
+            background: linear-gradient(135deg, var(--primary), #7b2cbf);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button.add-btn:hover { opacity: 0.9; }
+
+        #loader { margin-top: 20px; color: var(--text-muted); }
+
+    </style>
+</head>
+<body>
+
+    <h1>נקודות לירי</h1>
+    <div id="adminHeader">אתה שווה יותר מאחרים (Admin Mode)</div>
+
+    <div id="loader">טוען נתונים מהענן...</div>
+    <div id="container"></div>
+
+    <div id="addForm">
+        <div class="input-group">
+            <input id="newName" type="text" placeholder="שם החבר/ה" autocomplete="off" />
+            <input id="newPoints" type="number" placeholder="ניקוד התחלתי" />
+            <button class="add-btn" id="btnAdd">הוסף לרשימה</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // ==========================================
+        //  כאן מדביקים את ה-Config מ-Firebase
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC46vuypuxi1RQjsupuv3RxA7sVRfZprBI",
+            authDomain: "liri-points-database.firebaseapp.com",
+            projectId: "liri-points-database",
+            storageBucket: "liri-points-database.firebasestorage.app",
+            messagingSenderId: "448210240092",
+            appId: "1:448210240092:web:faa216ff11c887f3de1c99"
+        };
+
+        // אתחול Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null; 
+        let friendsData = [];   
+
+        // ----------------------------------------------------
+        // 1. לוגיקת התחברות (מופעל אם יש ?login=true ב-URL)
+        // ----------------------------------------------------
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === 'true') {
+            // שים לב: אנחנו משתמשים באימייל קבוע כאן, הסיסמה היא מה שחשוב
+            const email = "admin@burkason.com"; 
+            const password = prompt("flames666");
+            
+            if (password) {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then(() => {
+                        console.log("Logged in!");
+                        // מנקה את ה-URL
+                        window.history.replaceState({}, document.title, "/");
+                    })
+                    .catch((error) => {
+                        alert("שגיאה בהתחברות (אולי סיסמה לא נכונה?)");
+                    });
+            }
+        }
+
+        // האזנה למצב התחברות (האם המשתמש מחובר?)
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                document.body.classList.add("is-admin");
+            } else {
+                document.body.classList.remove("is-admin");
+            }
+            if (friendsData.length > 0) renderFriends(friendsData);
+        });
+
+        // ----------------------------------------------------
+        // 2. האזנה לנתונים בזמן אמת
+        // ----------------------------------------------------
+        const q = collection(db, "friends");
+        onSnapshot(q, (snapshot) => {
+            document.getElementById("loader").style.display = "none";
+            friendsData = [];
+            snapshot.forEach((doc) => {
+                friendsData.push({ id: doc.id, ...doc.data() });
+            });
+            renderFriends(friendsData);
+        });
+
+        // ----------------------------------------------------
+        // 3. פונקציית הרינדור (עם לוגיקת כלכלה חדשה)
+        // ----------------------------------------------------
+        function renderFriends(data) {
+            const container = document.getElementById("container");
+            container.innerHTML = "";
+
+            // מיון לפי ניקוד יורד
+            data.sort((a, b) => b.points - a.points);
+
+            data.forEach((friend, index) => {
+                const el = document.createElement("div");
+                el.className = "friend";
+
+                // קביעת תגיות כלכליות (מקום 1 ו-2)
+                let badgeHtml = "";
+                let borderClass = "";
+                
+                // מקום ראשון = 10 ש"ח (זהב)
+                if (index === 0 && data.length > 0) {
+                    badgeHtml = `<span class="value-badge badge-gold">10 ₪</span>`;
+                    borderClass = "gold-border";
+                } 
+                // מקום שני = לירה אחת (כסף)
+                else if (index === 1 && data.length > 1) {
+                    badgeHtml = `<span class="value-badge badge-silver">1 לירה</span>`;
+                    borderClass = "silver-border";
+                }
+                
+                if (borderClass) el.classList.add(borderClass);
+
+                el.innerHTML = `
+                    <div class="name-group">
+                        <button class="delete-btn admin-controls" data-id="${friend.id}">✕</button>
+                        <div class="name">${friend.id}</div>
+                        ${badgeHtml}
+                    </div>
+                    
+                    <div class="controls">
+                        <div class="arrow admin-controls" data-action="down" data-id="${friend.id}">▼</div>
+                        <div class="number" data-id="${friend.id}">${friend.points}</div>
+                        <div class="arrow admin-controls" data-action="up" data-id="${friend.id}">▲</div>
+                    </div>
+                `;
+
+                container.appendChild(el);
+            });
+
+            attachEvents();
+        }
+
+        // ----------------------------------------------------
+        // 4. חיבור כפתורים (רק אם יש צורך)
+        // ----------------------------------------------------
+        function attachEvents() {
+            // אם לא אדמין, לא מחברים אירועים (הם גם מוסתרים ב-CSS)
+            if (!currentUser) return;
+
+            document.querySelectorAll('.arrow').forEach(btn => {
+                btn.onclick = (e) => {
+                    const id = e.target.dataset.id;
+                    const action = e.target.dataset.action;
+                    updatePoints(id, action === 'up' ? 1 : -1);
+                };
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.onclick = (e) => {
+                    const id = e.target.dataset.id;
+                    if (confirm(`למחוק את ${id}?`)) {
+                        deleteFriend(id);
+                    }
+                };
+            });
+
+            document.querySelectorAll('.number').forEach(num => {
+                num.onclick = (e) => {
+                    const id = e.target.dataset.id;
+                    manualEdit(id);
+                };
+            });
+        }
+
+        // ----------------------------------------------------
+        // 5. ניהול נתונים והיסטוריה
+        // ----------------------------------------------------
+
+        // חישוב סך הכל עולמי (בשביל הגרף הכללי בעתיד)
+        function getTotalPoints() {
+            return friendsData.reduce((sum, f) => sum + f.points, 0);
+        }
+
+        // שמירה בהיסטוריה
+        async function recordHistory(name, newPoints) {
+            // אנו שומרים גם את הניקוד האישי וגם את הניקוד הגלובלי באותו רגע
+            // שים לב: זה חישוב מקומי של הסך הכל, זה מספיק טוב לצרכים שלנו
+            const currentTotal = getTotalPoints(); 
+            
+            try {
+                await addDoc(collection(db, "history"), {
+                    name: name,
+                    points: newPoints,
+                    totalPoints: currentTotal, 
+                    timestamp: serverTimestamp()
+                });
+            } catch (e) {
+                console.error("Error saving history:", e);
+            }
+        }
+
+        async function updatePoints(name, delta) {
+            const friend = friendsData.find(f => f.id === name);
+            if (!friend) return;
+            
+            const newPoints = friend.points + delta;
+            
+            await updateDoc(doc(db, "friends", name), {
+                points: newPoints,
+                lastUpdate: serverTimestamp()
+            });
+
+            recordHistory(name, newPoints);
+        }
+
+        async function manualEdit(name) {
+            const friend = friendsData.find(f => f.id === name);
+            const val = prompt(`שנה ניקוד עבור ${name}:`, friend.points);
+            
+            if (val !== null && val.trim() !== "" && !isNaN(Number(val))) {
+                const newPoints = Number(val);
+                await updateDoc(doc(db, "friends", name), {
+                    points: newPoints,
+                    lastUpdate: serverTimestamp()
+                });
+                recordHistory(name, newPoints);
+            }
+        }
+
+        async function addFriend() {
+            const nameInput = document.getElementById("newName");
+            const pointsInput = document.getElementById("newPoints");
+            const name = nameInput.value.trim();
+            
+            if (!name) return;
+            // בדיקה מקומית אם קיים
+            if (friendsData.find(f => f.id === name)) {
+                alert("כבר קיים!");
+                return;
+            }
+
+            let points = Number(pointsInput.value);
+            if (isNaN(points)) points = 0;
+
+            // יצירת מסמך חדש
+            await setDoc(doc(db, "friends", name), {
+                points: points,
+                lastUpdate: serverTimestamp()
+            });
+
+            recordHistory(name, points);
+
+            nameInput.value = "";
+            pointsInput.value = "";
+        }
+
+        async function deleteFriend(name) {
+            await deleteDoc(doc(db, "friends", name));
+        }
+
+        document.getElementById("btnAdd").onclick = addFriend;
+
+    </script>
+</body>
+</html>
