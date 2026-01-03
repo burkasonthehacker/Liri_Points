@@ -269,7 +269,7 @@
         if (urlParams.get('login') === 'true') {
             // שים לב: אנחנו משתמשים באימייל קבוע כאן, הסיסמה היא מה שחשוב
             const email = "admin@burkason.com"; 
-            const password = prompt("flames666");
+            const password = prompt("הכנס סיסמת מנהל:");
             
             if (password) {
                 signInWithEmailAndPassword(auth, email, password)
@@ -279,7 +279,7 @@
                         window.history.replaceState({}, document.title, "/");
                     })
                     .catch((error) => {
-                        alert("שגיאה בהתחברות (אולי סיסמה לא נכונה?)");
+                        alert("אין הרשאה לכניסתך, בן אנוש פשוט!");
                     });
             }
         }
