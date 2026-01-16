@@ -153,6 +153,12 @@
         select, .time-selector {
             background: #000; color: white; border: 1px solid #444; padding: 5px 10px; border-radius: 8px; font-family: inherit; outline: none;
         }
+/* --- תיקון לתפריט הנפתח של השמות --- */
+        /* הוספת מיכל עוטף יחסי כדי שהתפריט האבסולוטי יתייחס אליו */
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+        }
         /* תיקון לתפריט הנפתח של השמות */
         .multi-select-container {
             max-height: 200px; 
@@ -170,8 +176,45 @@
             right: 0; /* מצמיד את התפריט לצד ימין של הכפתור */
             left: auto; /* מונע בריחה שמאלה */
         }
-        .multi-select-trigger { cursor: pointer; background: #000; border: 1px solid #444; padding: 5px 10px; border-radius: 8px; display: flex; align-items: center; gap: 5px; font-size: 0.9rem;}
-        
+        .multi-select-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #000;
+            border: 1px solid #444;
+            padding: 5px;
+            border-radius: 8px;
+            display: none;
+            position: absolute;
+            z-index: 101; /* מעל גרפים ואלמנטים אחרים */
+            
+            /* התיקון הקריטי למובייל: */
+            top: 100%; /* נפתח בדיוק מתחת לכפתור */
+            right: 0; /* נצמד לצד ימין של הכפתור */
+            left: auto;
+            
+            /* הגדרת רוחב דינמית */
+            min-width: 150px; /* רוחב מינימלי */
+            max-width: 90vw; /* לא יעלה על 90% מרוחב המסך */
+            width: max-content; /* ינסה להתאים לתוכן, עד המקסימום */
+        }
+/* עיצוב הפריטים בתוך הרשימה כדי שיהיו קומפקטיים */
+        .multi-select-option label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 5px;
+            border-bottom: 1px solid #333;
+            font-size: 0.9rem;
+        }
+        .multi-select-option:last-child label {
+            border-bottom: none;
+        }
+
+        /* התאמה ספציפית ל-Select הבודד שלא יהיה רחב מדי */
+        select#individualSelect {
+             max-width: 150px;
+        }
         .time-range-bar { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; flex-wrap: wrap; }
         .range-btn {
             background: transparent; border: 1px solid #333; color: #888; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
@@ -261,7 +304,7 @@
             <div class="chart-header">
                 <div class="chart-title">השוואת נקודות</div>
                 <div style="position:relative;">
-                    <div class="multi-select-trigger" onclick="toggleMultiSelect()">
+                    <div class="select-wrapper"> <div class="multi-select-trigger" onclick="toggleMultiSelect()">
                         בחר שמות ▼
                     </div>
                     <div id="multiSelectOptions" class="multi-select-container"></div>
