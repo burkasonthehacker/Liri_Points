@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>נקודות לירי v4.1</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;       /* שחור עמוק */
+            --card-bg: #1a1a1a;        /* אפור כהה לכרטיסים */
+            --primary: #9d4edd;        /* סגול */
+            --accent: #00ff88;         /* ירוק ניאון */
+            --danger: #ff4d4d;         /* אדום למחיקה */
+            --gold: #ffd700;
+            --silver: #c0c0c0;
+            --text-main: #ffffff;
+            --text-muted: #b0b0b0;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Rubik', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Header & Nav --- */
+        header {
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        /* הכותרת המקורית שביקשת */
+        h1 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(157, 78, 221, 0.3);
+            font-weight: 700;
+        }
+
+        /* שורת האדמין */
+        #adminSubtitle {
+            display: none; /* מוסתר כברירת מחדל */
+            color: var(--primary);
+            font-size: 1rem;
+            text-decoration: underline;
+            margin-bottom: 15px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .nav-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            justify-content: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--card-bg);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+        }
+
+        /* --- Sections --- */
+        .section {
+            display: none;
+            width: min(500px, 92%);
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 100px;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .section.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Scoreboard Styles --- */
+        .friend {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--card-bg); padding: 15px 20px; border-radius: 16px;
+            border: 1px solid #333; transition: transform 0.2s, border-color 0.2s;
+            position: relative;
+        }
+        .friend:hover { transform: translateY(-2px); border-color: #444; }
+        .friend.gold-border { border-color: var(--gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.1); }
+        .friend.silver-border { border-color: var(--silver); }
+
+        .name-group { display: flex; align-items: center; gap: 10px; }
+        .name { font-size: 1.2rem; font-weight: 700; color: var(--text-main); }
+        
+        .value-badge { font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; font-weight: bold; color: #000; margin-right: 8px; }
+        .badge-gold { background: var(--gold); }
+        .badge-silver { background: var(--silver); }
+
+        /* Admin Controls */
+        .admin-only { display: none !important; }
+        body.is-admin .admin-only { display: flex !important; }
+        body.is-admin .admin-block { display: block !important; }
+
+        .controls {
+            display: flex; align-items: center; gap: 12px;
+            background: #000; padding: 5px 10px; border-radius: 12px; border: 1px solid #333;
+        }
+        .arrow { cursor: pointer; color: var(--primary); font-size: 1.2rem; user-select: none; padding: 0 5px; }
+        .arrow:hover { color: var(--accent); transform: scale(1.2); }
+        .number { font-size: 1.3rem; font-weight: bold; color: var(--accent); min-width: 35px; text-align: center; }
+        body.is-admin .number, body.is-admin .name { cursor: pointer; text-decoration: underline dotted #555; }
+        .delete-btn { background: none; border: none; color: #555; font-size: 1.1rem; cursor: pointer; margin-left: 5px; }
+        .delete-btn:hover { color: var(--danger); }
+
+        /* --- Analytics / Graphs --- */
+        .chart-container {
+            background: var(--card-bg); padding: 15px; border-radius: 20px;
+            border: 1px solid #333; margin-bottom: 20px;
+        }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;}
+        .chart-title { font-weight: bold; color: var(--primary); }
+        
+        select, .time-selector {
+            background: #000; color: white; border: 1px solid #444; padding: 5px 10px; border-radius: 8px; font-family: inherit; outline: none;
+        }
+        
+        .multi-select-container {
+            max-height: 100px; overflow-y: auto; background: #000; border: 1px solid #444; padding: 5px; border-radius: 8px; display: none;
+            position: absolute; z-index: 10; width: 200px;
+        }
+        .multi-select-trigger { cursor: pointer; background: #000; border: 1px solid #444; padding: 5px 10px; border-radius: 8px; display: flex; align-items: center; gap: 5px; font-size: 0.9rem;}
+        
+        .time-range-bar { display: flex; gap: 5px; margin-bottom: 10px; justify-content: center; flex-wrap: wrap; }
+        .range-btn {
+            background: transparent; border: 1px solid #333; color: #888; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+        }
+        .range-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* --- Updates Feed --- */
+        .update-card {
+            background: var(--card-bg); border-radius: 16px; padding: 15px; border: 1px solid #333; margin-bottom: 15px;
+        }
+        .update-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .update-title { font-size: 1.1rem; font-weight: bold; color: var(--accent); margin-bottom: 5px; }
+        .update-content { font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
+        .no-updates { text-align: center; color: var(--text-muted); margin-top: 20px; font-style: italic; }
+        
+        .post-delete-btn {
+            background: transparent; color: var(--danger); border: 1px solid var(--danger); 
+            border-radius: 6px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; margin-top: 10px;
+        }
+        .post-delete-btn:hover { background: var(--danger); color: white; }
+
+        /* Forms */
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; background: var(--card-bg); padding: 15px; border-radius: 16px; border: 1px solid #333; }
+        input, textarea { background: #000; border: 1px solid #333; padding: 10px; border-radius: 8px; color: white; font-family: inherit; outline: none; width: 100%; box-sizing: border-box;}
+        input:focus, textarea:focus { border-color: var(--primary); }
+        .action-btn { background: linear-gradient(135deg, var(--primary), #7b2cbf); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px;}
+        
+        .rich-text-controls { display: flex; gap: 5px; margin-bottom: 5px; }
+        .rt-btn { background: #333; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .rt-btn:hover { background: var(--primary); }
+
+        /* Loader */
+        #loader { margin-top: 20px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>נקודות לירי</h1>
+        <div id="adminSubtitle">אתה שווה יותר מכולם [ADMIN MODE]</div>
+    </header>
+
+    <div class="nav-container">
+        <div class="nav-btn active" onclick="showSection('homeSection', this)">דף הבית</div>
+        <div class="nav-btn" onclick="showSection('scoreboardSection', this)">לוח תוצאות</div>
+        <div class="nav-btn" onclick="showSection('analyticsSection', this)">מדדים</div>
+    </div>
+
+    <div id="homeSection" class="section active">
+        <h2 style="text-align:center; margin:0; color:var(--text-muted); font-weight:300;">עדכונים אחרונים</h2>
+        
+        <div class="input-group admin-block" style="display:none;">
+            <h3 style="margin:0; color:var(--primary);">פרסם עדכון חדש</h3>
+            <input id="postAuthor" list="authorsList" placeholder="שם המפרסם..." />
+            <datalist id="authorsList"></datalist>
+            <input id="postTitle" placeholder="כותרת הפוסט" />
+            
+            <div class="rich-text-controls">
+                <button class="rt-btn" onclick="formatText('b')">B</button>
+                <button class="rt-btn" onclick="formatText('i')">I</button>
+                <button class="rt-btn" onclick="formatText('u')">U</button>
+                <button class="rt-btn" onclick="addLink()">Link</button>
+            </div>
+            <textarea id="postContent" rows="4" placeholder="תוכן העדכון (ניתן להשתמש ב-HTML)"></textarea>
+            <button class="action-btn" onclick="publishUpdate()">פרסם לכולם</button>
+        </div>
+
+        <div id="updatesFeed">
+            <div id="loader">טוען עדכונים...</div>
+        </div>
+    </div>
+
+    <div id="scoreboardSection" class="section">
+        <div id="scoreboardContainer" style="display:flex; flex-direction:column; gap:15px;"></div>
+
+        <div class="input-group admin-block" style="display:none; margin-top:30px;">
+            <h3 style="margin:0; color:var(--primary);">הוסף חבר חדש</h3>
+            <input id="newFriendName" type="text" placeholder="שם החבר/ה" autocomplete="off" />
+            <input id="newFriendPoints" type="number" placeholder="ניקוד התחלתי" />
+            <button class="action-btn" onclick="addNewFriend()">הוסף לרשימה</button>
+        </div>
+    </div>
+
+    <div id="analyticsSection" class="section">
+        
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">השוואת נקודות</div>
+                <div style="position:relative;">
+                    <div class="multi-select-trigger" onclick="toggleMultiSelect()">
+                        בחר שמות ▼
+                    </div>
+                    <div id="multiSelectOptions" class="multi-select-container"></div>
+                </div>
+            </div>
+            <div class="time-range-bar" id="rangeBar1">
+                <button class="range-btn" onclick="setRange(1, '1d')">יום 1</button>
+                <button class="range-btn" onclick="setRange(1, '5d')">5 ימים</button>
+                <button class="range-btn" onclick="setRange(1, '1mo')">חודש</button>
+                <button class="range-btn" onclick="setRange(1, '6mo')">6 חודשים</button>
+                <button class="range-btn active" onclick="setRange(1, 'max')">משחר ההיסטוריה</button>
+            </div>
+            <canvas id="comparisonChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-title">נקודות לפי שם</div>
+                <select id="individualSelect" onchange="renderIndividualGraph()">
+                    </select>
+            </div>
+            <div class="time-range-bar" id="rangeBar2">
+                <button class="range-btn" onclick="setRange(2, '1d')">יום 1</button>
+                <button class="range-btn" onclick="setRange(2, '5d')">5 ימים</button>
+                <button class="range-btn" onclick="setRange(2, '1mo')">חודש</button>
+                <button class="range-btn" onclick="setRange(2, '6mo')">6 חודשים</button>
+                <button class="range-btn active" onclick="setRange(2, 'max')">משחר ההיסטוריה</button>
+            </div>
+            <canvas id="individualChart"></canvas>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, serverTimestamp, addDoc, query, orderBy, getDocs, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // ================= CONFIGURATION =================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC46vuypuxi1RQjsupuv3RxA7sVRfZprBI",
+            authDomain: "liri-points-database.firebaseapp.com",
+            projectId: "liri-points-database",
+            storageBucket: "liri-points-database.firebasestorage.app",
+            messagingSenderId: "448210240092",
+            appId: "1:448210240092:web:faa216ff11c887f3de1c99"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // State Management
+        window.currentUser = null;
+        let friendsData = [];
+        let historyData = [];
+        let chartInstances = { 1: null, 2: null };
+        let activeRanges = { 1: 'max', 2: 'max' };
+        let selectedComparison = [];
+
+        // 1. Authentication & Init
+        const urlParams = new URLSearchParams(window.location.search);
+        // Login Logic with secret param
+        if (urlParams.get('admin') === 'true') {
+            const email = "admin@burkason.com";
+            const password = prompt("הכנס סיסמת מנהל:");
+            if (password) {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then(() => window.history.replaceState({}, document.title, "/"))
+                    .catch(() => alert("סיסמה שגויה"));
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            document.body.classList.toggle("is-admin", !!user);
+            
+            // Subtitle logic
+            const sub = document.getElementById("adminSubtitle");
+            if (user) {
+                sub.style.display = "block";
+            } else {
+                sub.style.display = "none";
+            }
+
+            if (friendsData.length > 0) renderAll();
+        });
+
+        // 2. Real-time Listeners
+        onSnapshot(collection(db, "friends"), (snapshot) => {
+            friendsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderScoreboard();
+            updateDropdowns();
+            if(document.getElementById("analyticsSection").classList.contains("active")) {
+                loadGraphData();
+            }
+        });
+
+        // האזנה לעדכונים (תוקן: טיפול במצב ריק)
+        const qUpdates = query(collection(db, "updates"), orderBy("timestamp", "desc"));
+        onSnapshot(qUpdates, (snapshot) => {
+            const feed = document.getElementById("updatesFeed");
+            feed.innerHTML = "";
+            const authors = new Set();
+
+            if (snapshot.empty) {
+                feed.innerHTML = `<div class="no-updates">לא נמצאו עדכונים</div>`;
+                return;
+            }
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if(data.author) authors.add(data.author);
+                
+                const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString('he-IL') : "";
+                
+                const el = document.createElement("div");
+                el.className = "update-card";
+                el.innerHTML = `
+                    <div class="update-meta">
+                        <span>מאת: ${data.author || "מערכת"}</span>
+                        <span>${dateStr}</span>
+                    </div>
+                    <div class="update-title">${data.title}</div>
+                    <div class="update-content">${data.content}</div>
+                    <button class="post-delete-btn admin-only" onclick="deleteUpdate('${doc.id}')">מחק פוסט</button>
+                `;
+                feed.appendChild(el);
+            });
+
+            const datalist = document.getElementById("authorsList");
+            datalist.innerHTML = "";
+            authors.forEach(a => {
+                const opt = document.createElement("option");
+                opt.value = a;
+                datalist.appendChild(opt);
+            });
+        });
+
+        // 3. Navigation
+        window.showSection = (id, btn) => {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
+            if (id === 'analyticsSection') loadGraphData();
+        };
+
+        // 4. Scoreboard Functions
+        function renderScoreboard() {
+            const container = document.getElementById("scoreboardContainer");
+            container.innerHTML = "";
+            const sorted = [...friendsData].sort((a, b) => b.points - a.points);
+
+            sorted.forEach((friend, index) => {
+                const el = document.createElement("div");
+                el.className = "friend";
+                let badge = "";
+                if (index === 0 && sorted.length > 0) {
+                    badge = `<span class="value-badge badge-gold">10 ₪</span>`;
+                    el.classList.add("gold-border");
+                } else if (index === 1 && sorted.length > 1) {
+                    badge = `<span class="value-badge badge-silver">1 לירה</span>`;
+                    el.classList.add("silver-border");
+                }
+
+                el.innerHTML = `
+                    <div class="name-group">
+                        <button class="delete-btn admin-only" onclick="deleteFriend('${friend.id}')">✕</button>
+                        <div class="name" id="name-${index}">${friend.id}</div>
+                        ${badge}
+                    </div>
+                    <div class="controls">
+                        <div class="arrow admin-only" onclick="updatePoints('${friend.id}', -1)">▼</div>
+                        <div class="number" onclick="manualEdit('${friend.id}')">${friend.points}</div>
+                        <div class="arrow admin-only" onclick="updatePoints('${friend.id}', 1)">▲</div>
+                    </div>
+                `;
+                container.appendChild(el);
+                document.getElementById(`name-${index}`).onclick = () => renameFriend(friend.id, friend.points);
+            });
+        }
+
+        // 5. Admin Actions
+        window.updatePoints = async (name, delta) => {
+            const f = friendsData.find(x => x.id === name);
+            if(!f) return;
+            const newPts = f.points + delta;
+            await updateDoc(doc(db, "friends", name), { points: newPts, lastUpdate: serverTimestamp() });
+            recordHistory(name, newPts);
+        };
+
+        window.manualEdit = async (name) => {
+            if (!window.currentUser) return;
+            const f = friendsData.find(x => x.id === name);
+            const val = prompt(`שנה ניקוד ל-${name}:`, f.points);
+            if (val && !isNaN(val)) {
+                await updateDoc(doc(db, "friends", name), { points: Number(val), lastUpdate: serverTimestamp() });
+                recordHistory(name, Number(val));
+            }
+        };
+
+        window.addNewFriend = async () => {
+            const n = document.getElementById("newFriendName").value.trim();
+            const p = Number(document.getElementById("newFriendPoints").value) || 0;
+            if (!n) return;
+            if (friendsData.find(f => f.id === n)) return alert("השם קיים כבר");
+            await setDoc(doc(db, "friends", n), { points: p, lastUpdate: serverTimestamp() });
+            recordHistory(n, p);
+            document.getElementById("newFriendName").value = "";
+            document.getElementById("newFriendPoints").value = "";
+        };
+
+        window.deleteFriend = async (name) => {
+            if (confirm(`למחוק את ${name}?`)) await deleteDoc(doc(db, "friends", name));
+        };
+
+        window.renameFriend = async (oldName, currentPoints) => {
+            if (!window.currentUser) return;
+            const newName = prompt(`שנה שם מ-${oldName} ל:`, oldName);
+            if (!newName || newName === oldName || newName.trim() === "") return;
+            if (friendsData.find(f => f.id === newName)) return alert("השם החדש כבר תפוס!");
+            if (!confirm(`פעולה זו תעדכן את היסטוריית הגרפים. להמשיך?`)) return;
+
+            await setDoc(doc(db, "friends", newName), { points: currentPoints, lastUpdate: serverTimestamp() });
+            await deleteDoc(doc(db, "friends", oldName));
+
+            // Batch update history
+            const historyRef = collection(db, "history");
+            const q = query(historyRef, where("name", "==", oldName));
+            const querySnapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            querySnapshot.forEach((doc) => { batch.update(doc.ref, { name: newName }); });
+            
+            try { await batch.commit(); alert("השם עודכן בהצלחה!"); } 
+            catch (e) { alert("שגיאה בעדכון היסטוריה."); }
+        };
+
+        async function recordHistory(name, pts) {
+            const total = friendsData.reduce((s, f) => s + (f.id === name ? pts : f.points), 0);
+            await addDoc(collection(db, "history"), { 
+                name, points: pts, totalPoints: total, timestamp: serverTimestamp() 
+            });
+        }
+
+        // 6. Updates System (תוקן)
+        window.publishUpdate = async () => {
+            const author = document.getElementById("postAuthor").value;
+            const title = document.getElementById("postTitle").value;
+            const content = document.getElementById("postContent").value;
+            
+            if(!title || !content) return alert("חובה למלא כותרת ותוכן");
+
+            try {
+                await addDoc(collection(db, "updates"), {
+                    author, title, content, timestamp: serverTimestamp()
+                });
+                document.getElementById("postTitle").value = "";
+                document.getElementById("postContent").value = "";
+                alert("הפוסט פורסם!");
+            } catch (e) {
+                console.error(e);
+                alert("שגיאה בפרסום: וודא שאתה מחובר כאדמין.");
+            }
+        };
+
+        window.deleteUpdate = async (id) => {
+            if(confirm("למחוק את הפוסט לצמיתות?")) {
+                await deleteDoc(doc(db, "updates", id));
+            }
+        };
+
+        window.formatText = (tag) => {
+            const area = document.getElementById("postContent");
+            const start = area.selectionStart;
+            const end = area.selectionEnd;
+            const text = area.value;
+            const selection = text.substring(start, end);
+            area.value = text.substring(0, start) + `<${tag}>` + selection + `</${tag}>` + text.substring(end);
+        };
+
+        window.addLink = () => {
+            const area = document.getElementById("postContent");
+            const url = prompt("הכנס כתובת URL:");
+            if(url) area.value += `<a href="${url}" target="_blank">קישור</a>`;
+        };
+
+        // 7. Analytics
+        function updateDropdowns() {
+            const multiContainer = document.getElementById("multiSelectOptions");
+            if (!multiContainer.children.length) { 
+                 const currentSelection = Array.from(multiContainer.querySelectorAll('input:checked')).map(i => i.value);
+                 multiContainer.innerHTML = "";
+                 friendsData.forEach(f => {
+                     const div = document.createElement("div");
+                     div.innerHTML = `<label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:5px;">
+                            <input type="checkbox" value="${f.id}" onchange="updateComparisonSelection()" ${currentSelection.includes(f.id) ? 'checked' : ''}>
+                            ${f.id}</label>`;
+                     multiContainer.appendChild(div);
+                 });
+            }
+            const indSelect = document.getElementById("individualSelect");
+            const currentVal = indSelect.value;
+            indSelect.innerHTML = `<option value="total">סכום כולל (כולם)</option>`;
+            friendsData.forEach(f => {
+                const opt = document.createElement("option");
+                opt.value = f.id;
+                opt.textContent = f.id;
+                indSelect.appendChild(opt);
+            });
+            if(currentVal) indSelect.value = currentVal;
+        }
+
+        window.toggleMultiSelect = () => {
+            const el = document.getElementById("multiSelectOptions");
+            el.style.display = el.style.display === "block" ? "none" : "block";
+        };
+
+        window.updateComparisonSelection = () => {
+            selectedComparison = Array.from(document.querySelectorAll('#multiSelectOptions input:checked')).map(c => c.value);
+            renderComparisonGraph();
+        };
+
+        async function loadGraphData() {
+            const q = query(collection(db, "history"), orderBy("timestamp", "asc"));
+            const snapshot = await getDocs(q);
+            historyData = snapshot.docs.map(doc => {
+                const d = doc.data();
+                return {
+                    name: d.name, points: d.points, total: d.totalPoints,
+                    date: d.timestamp ? d.timestamp.toDate() : new Date(),
+                    t: d.timestamp ? d.timestamp.toMillis() : Date.now()
+                };
+            });
+            renderComparisonGraph();
+            renderIndividualGraph();
+        }
+
+        function filterByTime(data, rangeCode) {
+            if (rangeCode === 'max') return data;
+            const now = Date.now();
+            let duration = 0;
+            if (rangeCode === '1d') duration = 24 * 60 * 60 * 1000;
+            if (rangeCode === '5d') duration = 5 * 24 * 60 * 60 * 1000;
+            if (rangeCode === '1mo') duration = 30 * 24 * 60 * 60 * 1000;
+            if (rangeCode === '6mo') duration = 6 * 30 * 24 * 60 * 60 * 1000;
+            return data.filter(item => (now - item.t) <= duration);
+        }
+
+        function getChartConfig(datasets) {
+            return {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    elements: { point: { radius: 0, hoverRadius: 6 }, line: { tension: 0.4 } },
+                    plugins: {
+                        legend: { labels: { color: '#fff' } },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 26, 26, 0.9)', titleColor: '#00ff88', bodyColor: '#fff',
+                            callbacks: {
+                                title: (c) => new Date(c[0].parsed.x).toLocaleString('he-IL') + " GMT+2",
+                                label: (c) => ` ${c.dataset.label}: ${c.parsed.y} נק"ל`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day', displayFormats: { day: 'd/M' } }, grid: { color: '#333' }, ticks: { color: '#aaa' } },
+                        y: { grid: { color: '#333' }, ticks: { color: '#aaa' } }
+                    }
+                }
+            };
+        }
+
+        window.renderComparisonGraph = () => {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            if (chartInstances[1]) chartInstances[1].destroy();
+            const filteredHistory = filterByTime(historyData, activeRanges[1]);
+            const datasets = [];
+            const colors = ['#ff0055', '#00ff88', '#00ccff', '#ffaa00', '#9d4edd', '#ffffff'];
+            
+            selectedComparison.forEach((name, idx) => {
+                const userPoints = filteredHistory.filter(h => h.name === name).map(h => ({ x: h.date, y: h.points }));
+                const current = friendsData.find(f => f.id === name);
+                if(current) userPoints.push({ x: new Date(), y: current.points });
+                datasets.push({ label: name, data: userPoints, borderColor: colors[idx % colors.length], borderWidth: 2, fill: false });
+            });
+            chartInstances[1] = new Chart(ctx, getChartConfig(datasets));
+        };
+
+        window.renderIndividualGraph = () => {
+            const ctx = document.getElementById('individualChart').getContext('2d');
+            if (chartInstances[2]) chartInstances[2].destroy();
+            const selection = document.getElementById("individualSelect").value;
+            const filteredHistory = filterByTime(historyData, activeRanges[2]);
+            let dataPoints = [], label = "";
+
+            if (selection === 'total') {
+                label = "סכום כולל";
+                dataPoints = filteredHistory.map(h => ({ x: h.date, y: h.total }));
+                const grandTotal = friendsData.reduce((s,f) => s + f.points, 0);
+                dataPoints.push({ x: new Date(), y: grandTotal });
+            } else {
+                label = selection;
+                dataPoints = filteredHistory.filter(h => h.name === selection).map(h => ({ x: h.date, y: h.points }));
+                const current = friendsData.find(f => f.id === selection);
+                if(current) dataPoints.push({ x: new Date(), y: current.points });
+            }
+            
+            let color = '#9d4edd';
+            if (dataPoints.length > 1) {
+                if (dataPoints[dataPoints.length - 1].y > dataPoints[0].y) color = '#00ff88';
+                else if (dataPoints[dataPoints.length - 1].y < dataPoints[0].y) color = '#ff4d4d';
+            }
+            
+            chartInstances[2] = new Chart(ctx, getChartConfig([{
+                label, data: dataPoints, borderColor: color, backgroundColor: color, borderWidth: 2,
+                fill: { target: 'origin', above: color + '10', below: color + '10' }
+            }]));
+        };
+
+        window.setRange = (graphId, range) => {
+            activeRanges[graphId] = range;
+            const bar = document.getElementById(`rangeBar${graphId}`);
+            bar.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            if (graphId === 1) renderComparisonGraph(); else renderIndividualGraph();
+        };
+
+        function renderAll() { renderScoreboard(); updateDropdowns(); }
+    </script>
+</body>
+</html>
