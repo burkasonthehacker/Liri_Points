@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>נקודות לירי - עוברים דירה</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: #ffffff;
+            font-family: 'Rubik', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #00ff88, #9d4edd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        p { color: #b0b0b0; font-size: 1.2rem; }
+        .timer { font-size: 3rem; color: #00ff88; font-weight: bold; margin: 20px 0; }
+        .btn {
+            background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+            transition: 0.3s;
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(157, 78, 221, 0.6); }
+    </style>
+</head>
+<body>
+    <h1>עברנו לבית חדש!</h1>
+    <p>האתר המקורי של נקודות לירי השתדרג ועבר לכתובת חדשה.</p>
+    <div class="timer" id="countdown">7</div>
+    <p>מיד תועברו אוטומטית...</p>
+    <a href="https://your-new-url.vercel.app/liri" class="btn">קח אותי לשם עכשיו</a>
+
+    <script>
+        let count = 7;
+        const target = "https://your-new-url.vercel.app/liri";
+        const el = document.getElementById('countdown');
+        const timer = setInterval(() => {
+            count--;
+            el.innerText = count;
+            if (count <= 0) {
+                clearInterval(timer);
+                window.location.href = target;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
